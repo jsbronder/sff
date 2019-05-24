@@ -342,6 +342,14 @@ void QVTerm::mousePressEvent(QMouseEvent *event)
     }
 }
 
+void QVTerm::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton && m_highlight->active()) {
+        event->accept();
+        copyToClipboard();
+    }
+}
+
 void QVTerm::paintEvent(QPaintEvent *event)
 {
     event->accept();
@@ -616,6 +624,36 @@ int QVTerm::sb_popline(int cols, VTermScreenCell *cells)
     verticalScrollBar()->setValue(verticalScrollBar()->maximum());
 
     return 1;
+}
+
+void QVTerm::copyToClipboard()
+{
+    if (!m_highlight->active())
+        return;
+
+    QString buf{};
+
+    static auto fetchLine = [](VTermScreen *vts, QString &buf, int y, int xBegin, int xEnd) {
+        static VTermScreenCell cell{};
+        for (int x = xBegin; x < xEnd; ++x) {
+            VTermPos vtp{y, x};
+            vterm_screen_get_cell(vts, vtp, &cell);
+            if (cell.chars[0] != '\0')
+                buf.append(QString::fromUcs4(cell.chars, cell.width));
+            else if (x == xEnd - 1)
+                buf.append('\n');
+        }
+    };
+
+    int maxWidth = size().width() / m_cellSize.width();
+    for (int y = m_highlight->start().y(); y < m_highlight->end().y() + 1; ++y) {
+        int start = y == m_highlight->start().y() ? m_highlight->start().x() : 0;
+        int width = y == m_highlight->end().y() ? m_highlight->end().x() : maxWidth;
+        fetchLine(m_vtermScreen, buf, y, start, width);
+    }
+
+    auto *cb = QApplication::clipboard();
+    cb->setText(buf, QClipboard::Selection);
 }
 
 void QVTerm::flushToPty()

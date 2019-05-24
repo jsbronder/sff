@@ -39,6 +39,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
@@ -54,6 +55,7 @@ private:
     int sb_pushline(int cols, const VTermScreenCell *cells);
     int sb_popline(int cols, VTermScreenCell *cells);
 
+    void copyToClipboard();
     void flushToPty();
     void onPtyInput(int fd);
     void pasteFromClipboard();
