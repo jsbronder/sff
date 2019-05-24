@@ -231,7 +231,7 @@ void QVTerm::start()
         signal(SIGSTOP, SIG_DFL);
         signal(SIGCONT, SIG_DFL);
 
-        putenv(const_cast<char *>("TERM=xterm"));
+        putenv(const_cast<char *>("TERM=xterm-256color"));
         putenv(const_cast<char *>("COLORTERM=truecolor"));
         char *shell = getenv("SHELL");
         char *const args[] = {shell, nullptr};
