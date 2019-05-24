@@ -1,5 +1,6 @@
-#include "qvterm.hpp"
+#include "highlight.hpp"
 #include "scrollback.hpp"
+#include "qvterm.hpp"
 
 #include <QAbstractScrollArea>
 #include <QApplication>
@@ -85,6 +86,7 @@ QVTerm::QVTerm(QWidget *parent) :
     QAbstractScrollArea(parent),
     m_vterm(vterm_new(size().height(), size().width())),
     m_vtermScreen(vterm_obtain_screen(m_vterm)),
+    m_highlight(std::make_unique<Highlight>()),
     m_scrollback(std::make_unique<Scrollback>(5000))
 {
     vterm_set_utf8(m_vterm, true);
@@ -121,7 +123,6 @@ QVTerm::QVTerm(QWidget *parent) :
     // clang-format on
     vterm_screen_set_callbacks(m_vtermScreen, &vtcbs, this);
     vterm_screen_set_damage_merge(m_vtermScreen, VTERM_DAMAGE_SCROLL);
-    vterm_screen_reset(m_vtermScreen, 1);
     vterm_screen_enable_altscreen(m_vtermScreen, true);
 
     static auto on_output = [](const char *s, size_t len, void *user) {
@@ -167,6 +168,8 @@ QVTerm::QVTerm(QWidget *parent) :
     vterm_color_rgb(&fg, 0xbe, 0xb3, 0xb3);
     vterm_color_rgb(&bg, 0x26, 0x26, 0x26);
     vterm_state_set_default_colors(vts, &fg, &bg);
+
+    vterm_screen_reset(m_vtermScreen, 1);
 }
 
 QVTerm::~QVTerm()
@@ -310,12 +313,32 @@ void QVTerm::keyPressEvent(QKeyEvent *event)
     flushToPty();
 }
 
+void QVTerm::mouseMoveEvent(QMouseEvent *event)
+{
+    event->accept();
+    if (!QRect(QPoint(), size()).contains(event->pos()))
+        return;
+
+    m_highlight->update(
+            event->pos().x() / m_cellSize.width(),
+            event->pos().y() / m_cellSize.height());
+    viewport()->update();
+}
+
 void QVTerm::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::MidButton) {
         event->accept();
         pasteFromClipboard();
         return;
+    }
+
+    if (event->button() == Qt::LeftButton) {
+        event->accept();
+        m_highlight->anchor(
+            event->pos().x() / m_cellSize.width(),
+            event->pos().y() / m_cellSize.height());
+        viewport()->update();
     }
 }
 
@@ -391,29 +414,32 @@ void QVTerm::paintEvent(QPaintEvent *event)
 
     for (int row = startRow; row < endRow; row++) {
         int phyrow = row - static_cast<int>(m_scrollback->offset());
+        int y = row * m_cellSize.height();
 
         for (int col = startCol; col < endCol; ++col) {
             const VTermScreenCell *cell = fetchCell(phyrow, col);
             const VTermColor *bg = &cell->bg;
             const VTermColor *fg = &cell->fg;
+            int x = col * m_cellSize.width();
+            bool highlight = m_highlight->contains(col, row);
 
-            if (static_cast<bool>(cell->attrs.reverse)) {
+
+            if (static_cast<bool>(cell->attrs.reverse) || highlight) {
                 bg = &cell->fg;
                 fg = &cell->bg;
             }
 
-            if (cell->chars[0] == '\0') {
-                continue;
-            }
-
             if (!vterm_color_is_equal(bg, &defaultBg)) {
                 p.fillRect(
-                        col * m_cellSize.width(),
-                        row * m_cellSize.height(),
+                        x,
+                        y,
                         cell->width * m_cellSize.width(),
                         m_cellSize.height(),
                         toQColor(*bg));
             }
+
+            if (!cell->chars[0])
+                continue;
 
             if (!colorEqual(p.pen().color(), *fg)) {
                 p.setPen(toQColor(*fg));
@@ -438,8 +464,8 @@ void QVTerm::paintEvent(QPaintEvent *event)
             }
 
             p.drawText(
-                    col * m_cellSize.width(),
-                    row * m_cellSize.height(),
+                    x,
+                    y,
                     cell->width * m_cellSize.width(),
                     m_cellSize.height(),
                     0,
@@ -466,6 +492,7 @@ void QVTerm::resizeEvent(QResizeEvent *event)
 {
     event->accept();
 
+    m_highlight->reset();
     int height = size().height() / m_cellSize.height();
     int width = size().width() / m_cellSize.width();
     struct winsize wsz = {

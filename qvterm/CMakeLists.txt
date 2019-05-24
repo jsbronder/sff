@@ -1,4 +1,5 @@
 add_library(qvterm SHARED
+    highlight.cpp
     scrollback.cpp
     qvterm.cpp)
 target_link_libraries(qvterm libvterm::libvterm Qt5::Widgets util)
