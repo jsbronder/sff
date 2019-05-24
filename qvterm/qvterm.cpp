@@ -286,6 +286,10 @@ void QVTerm::keyPressEvent(QKeyEvent *event)
         vterm_keyboard_key(m_vterm, key, mod);
         m_scrollback->unscroll();
     } else if (event->text().length()) {
+        // This maps to delete word and is way to easy to mistakenly type
+        if (event->key() == Qt::Key_Space && mod == VTERM_MOD_SHIFT)
+            mod = VTERM_MOD_NONE;
+
         // Default to nativeVirtualKey which will send <modifier>+<key> rather
         // than text() which will map the combination (meaning that the shell
         // will get <modifier>+<<modifier>+<key>>.
