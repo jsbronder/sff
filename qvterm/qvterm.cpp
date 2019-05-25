@@ -554,7 +554,19 @@ int QVTerm::moverect(VTermRect dest, VTermRect src)
 
 int QVTerm::movecursor(VTermPos pos, VTermPos oldpos, int visible)
 {
-    Q_UNUSED(oldpos);
+    if (pos.row == oldpos.row) {
+        viewport()->update(
+                std::min(pos.col, oldpos.col) * m_cellSize.width(),
+                pos.row * m_cellSize.height(),
+                (std::abs(pos.col - oldpos.col) + 1) * m_cellSize.width(),
+                m_cellSize.height());
+    } else {
+        viewport()->update(
+                0,
+                std::min(pos.row, oldpos.row) * m_cellSize.height(),
+                size().width(),
+                2 * m_cellSize.height());
+    }
     m_cursor.row = pos.row;
     m_cursor.col = pos.col;
     m_cursor.visible = visible;
@@ -704,7 +716,6 @@ void QVTerm::onPtyInput(int fd)
     }
     vterm_screen_flush_damage(m_vtermScreen);
     flushToPty();
-    viewport()->update();
 }
 
 void QVTerm::pasteFromClipboard()
