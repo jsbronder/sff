@@ -59,6 +59,7 @@ private:
     void flushToPty();
     void onPtyInput(int fd);
     void pasteFromClipboard();
+    void repaintCursor();
 
 private:
     VTerm *m_vterm;

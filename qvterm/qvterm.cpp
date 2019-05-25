@@ -250,12 +250,7 @@ void QVTerm::focusInEvent(QFocusEvent *event)
 
     VTermState *state = vterm_obtain_state(m_vterm);
     vterm_state_focus_in(state);
-
-    viewport()->update(
-            m_cursor.col * m_cellSize.width(),
-            m_cursor.row * m_cellSize.height(),
-            m_cellSize.width(),
-            m_cellSize.height());
+    repaintCursor();
 }
 
 void QVTerm::focusOutEvent(QFocusEvent *event)
@@ -264,12 +259,7 @@ void QVTerm::focusOutEvent(QFocusEvent *event)
 
     VTermState *state = vterm_obtain_state(m_vterm);
     vterm_state_focus_out(state);
-
-    viewport()->update(
-            m_cursor.col * m_cellSize.width(),
-            m_cursor.row * m_cellSize.height(),
-            m_cellSize.width(),
-            m_cellSize.height());
+    repaintCursor();
 }
 
 void QVTerm::keyPressEvent(QKeyEvent *event)
@@ -728,4 +718,13 @@ void QVTerm::pasteFromClipboard()
 
     flushToPty();
     return;
+}
+
+void QVTerm::repaintCursor()
+{
+    viewport()->update(
+            m_cursor.col * m_cellSize.width(),
+            m_cursor.row * m_cellSize.height(),
+            m_cellSize.width(),
+            m_cellSize.height());
 }
