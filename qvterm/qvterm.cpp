@@ -504,6 +504,12 @@ void QVTerm::resizeEvent(QResizeEvent *event)
 {
     event->accept();
 
+    // If increasing in size, we'll trigger libvterm to call sb_popline in
+    // order to pull lines out of the history.  This will cause the scrollback
+    // to decrease in size which reduces the size of the verticalScrollBar.
+    // That will trigger a scroll offset increase which we want to ignore.
+    m_ignoreScroll = true;
+
     m_highlight->reset();
     int height = size().height() / m_cellSize.height();
     int width = size().width() / m_cellSize.width();
@@ -516,6 +522,7 @@ void QVTerm::resizeEvent(QResizeEvent *event)
     ioctl(m_pty, TIOCSWINSZ, &wsz);
     vterm_set_size(m_vterm, height, width);
     vterm_screen_flush_damage(m_vtermScreen);
+    m_ignoreScroll = false;
 }
 
 void QVTerm::wheelEvent(QWheelEvent *event)
@@ -529,6 +536,9 @@ void QVTerm::wheelEvent(QWheelEvent *event)
 void QVTerm::scrollContentsBy(int dx, int dy)
 {
     Q_UNUSED(dx);
+
+    if (m_ignoreScroll)
+        return;
 
     if (m_altscreen)
         return;

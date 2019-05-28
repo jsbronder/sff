@@ -72,6 +72,7 @@ private:
     QFont m_font;
     QSize m_cellSize;
     bool m_altscreen{false};
+    bool m_ignoreScroll{false};
 
     struct {
         int row;
