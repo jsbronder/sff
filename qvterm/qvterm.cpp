@@ -46,12 +46,12 @@ VTermKey vtermKey(int key, bool keypad)
         return static_cast<VTermKey>(VTERM_KEY_FUNCTION_0 + key - Qt::Key_F1 + 1);
 
     switch (key) {
-        case Qt::Key_Backspace:
-            return VTERM_KEY_BACKSPACE;
-        case Qt::Key_Tab:
-            return VTERM_KEY_TAB;
         case Qt::Key_Return:
             return VTERM_KEY_ENTER;
+        case Qt::Key_Tab:
+            return VTERM_KEY_TAB;
+        case Qt::Key_Backspace:
+            return VTERM_KEY_BACKSPACE;
         case Qt::Key_Escape:
             return VTERM_KEY_ESCAPE;
         case Qt::Key_Up:
@@ -74,8 +74,22 @@ VTermKey vtermKey(int key, bool keypad)
             return keypad ? VTERM_KEY_PAGEUP : VTERM_KEY_NONE;
         case Qt::Key_PageDown:
             return keypad ? VTERM_KEY_PAGEDOWN : VTERM_KEY_NONE;
+        case Qt::Key_multiply:
+            return keypad ? VTERM_KEY_KP_MULT : VTERM_KEY_NONE;
+        case Qt::Key_Plus:
+            return keypad ? VTERM_KEY_KP_PLUS : VTERM_KEY_NONE;
+        case Qt::Key_Comma:
+            return keypad ? VTERM_KEY_KP_COMMA : VTERM_KEY_NONE;
+        case Qt::Key_Minus:
+            return keypad ? VTERM_KEY_KP_MINUS : VTERM_KEY_NONE;
+        case Qt::Key_Period:
+            return keypad ? VTERM_KEY_KP_PERIOD : VTERM_KEY_NONE;
+        case Qt::Key_Slash:
+            return keypad ? VTERM_KEY_KP_DIVIDE : VTERM_KEY_NONE;
         case Qt::Key_Enter:
-            return keypad ? VTERM_KEY_ENTER : VTERM_KEY_NONE;
+            return keypad ? VTERM_KEY_KP_ENTER : VTERM_KEY_NONE;
+        case Qt::Key_Equal:
+            return keypad ? VTERM_KEY_KP_EQUAL : VTERM_KEY_NONE;
         default:
             return VTERM_KEY_NONE;
     }
