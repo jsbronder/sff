@@ -486,14 +486,27 @@ void QVTerm::paintEvent(QPaintEvent *event)
     }
 
     if (hasFocus() && m_cursor.visible) {
+        int x = m_cursor.col * m_cellSize.width();
+        int y = m_cursor.row * m_cellSize.height();
         p.save();
-        p.setCompositionMode(QPainter::CompositionMode_Lighten);
+        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
         p.fillRect(
-                m_cursor.col * m_cellSize.width(),
-                m_cursor.row * m_cellSize.height(),
+                x,
+                y,
                 m_cellSize.width(),
                 m_cellSize.height(),
                 QColor(qRgb(0x40, 0x40, 0x40)));
+        const VTermScreenCell *cell = fetchCell(m_cursor.row, m_cursor.col);
+        if (cell->chars[0]) {
+            p.setPen(toQColor(defaultBg));
+            p.drawText(
+                    x,
+                    y,
+                    cell->width * m_cellSize.width(),
+                    m_cellSize.height(),
+                    0,
+                    QString::fromUcs4(cell->chars, cell->width));
+        }
         p.restore();
     }
 
