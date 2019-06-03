@@ -21,8 +21,8 @@ void Highlight::anchor(int x, int y)
 bool Highlight::contains(int x, int y) const
 {
     return (active()
-        && (y > m_start.y() || (y == m_start.y() && x >= m_start.x()))
-        && (y < m_end.y() || (y == m_end.y() && x <= m_end.x())));
+            && (y > m_start.y() || (y == m_start.y() && x >= m_start.x()))
+            && (y < m_end.y() || (y == m_end.y() && x <= m_end.x())));
 }
 
 void Highlight::reset()

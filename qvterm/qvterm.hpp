@@ -18,8 +18,7 @@ class QWidget;
 class Highlight;
 class Scrollback;
 
-class QVTerm : public QAbstractScrollArea
-{
+class QVTerm : public QAbstractScrollArea {
     Q_OBJECT
 public:
     explicit QVTerm(QWidget *parent = nullptr);

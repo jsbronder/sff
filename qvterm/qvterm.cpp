@@ -1,6 +1,6 @@
+#include "qvterm.hpp"
 #include "highlight.hpp"
 #include "scrollback.hpp"
-#include "qvterm.hpp"
 
 #include <QAbstractScrollArea>
 #include <QApplication>
@@ -162,24 +162,24 @@ QVTerm::QVTerm(QWidget *parent) :
     };
     setColor(0, 0x66, 0x66, 0x66);
     setColor(8, 0x66, 0x66, 0x66);
-    setColor(1,	0x9e, 0x18, 0x28);
-    setColor(9,	0xcf, 0x61, 0x71);
-    setColor(2,	0xae, 0xce, 0x92);
+    setColor(1, 0x9e, 0x18, 0x28);
+    setColor(9, 0xcf, 0x61, 0x71);
+    setColor(2, 0xae, 0xce, 0x92);
     setColor(10, 0xc5, 0xf7, 0x79);
-    setColor(3,	0x96, 0x8a, 0x38);
+    setColor(3, 0x96, 0x8a, 0x38);
     setColor(11, 0xff, 0xf7, 0x96);
-    setColor(4,	0x4e, 0x78, 0xa0);
+    setColor(4, 0x4e, 0x78, 0xa0);
     setColor(12, 0x41, 0x86, 0xbe);
-    setColor(5,	0x96, 0x3c, 0x59);
+    setColor(5, 0x96, 0x3c, 0x59);
     setColor(13, 0xcf, 0x9e, 0xbe);
-    setColor(6,	0x41, 0x81, 0x79);
+    setColor(6, 0x41, 0x81, 0x79);
     setColor(14, 0x71, 0xbe, 0xbe);
-    setColor(7,	0xbe, 0xbe, 0xbe);
+    setColor(7, 0xbe, 0xbe, 0xbe);
     setColor(15, 0xff, 0xff, 0xff);
 
     VTermColor fg;
     VTermColor bg;
-    vterm_color_rgb(&fg, 0xbe, 0xb3, 0xb3);
+    vterm_color_rgb(&fg, 0xbe, 0xbe, 0xbe);
     vterm_color_rgb(&bg, 0x26, 0x26, 0x26);
     vterm_state_set_default_colors(vts, &fg, &bg);
 
@@ -340,8 +340,8 @@ void QVTerm::mousePressEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton) {
         event->accept();
         m_highlight->anchor(
-            event->pos().x() / m_cellSize.width(),
-            event->pos().y() / m_cellSize.height());
+                event->pos().x() / m_cellSize.width(),
+                event->pos().y() / m_cellSize.height());
         viewport()->update();
     }
 }
@@ -434,7 +434,6 @@ void QVTerm::paintEvent(QPaintEvent *event)
             const VTermColor *fg = &cell->fg;
             int x = col * m_cellSize.width();
             bool highlight = m_highlight->contains(col, row);
-
 
             if (static_cast<bool>(cell->attrs.reverse) || highlight) {
                 bg = &cell->fg;
