@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+yesno() {
+	# call with a prompt string or use a default
+	read -n 1 -r -p "${1:-Are you sure?} [y/N] " response
+	echo
+	case ${response} in
+		[yY][eE][sS]|[yY])
+			true
+			;;
+		*)
+			false
+			;;
+	esac
+}
+
+repo_topdir() {
+	local git_dir=$(git rev-parse --git-dir 2>/dev/null)
+	git_dir=$(realpath ${git_dir})
+	echo ${git_dir/\/.git*/}
+}
+
+install_hooks() {
+	local gitdir=$(realpath $(git rev-parse --git-dir 2>/dev/null))
+	local hookdir=$(dirname $(readlink -m ${0}))/git-hooks
+
+	for hook in ${hookdir}/*; do
+		local bn=$(basename ${hook})
+		echo "Symlinking hook ${bn}"
+
+		if [ -f "${gitdir}"/hooks/${bn} ]; then
+			yesno "Overwrite ${bn}?" || continue
+		fi
+		ln -sf "${hook}" "${gitdir}"/hooks/${bn}
+	done
+}
+
+install_hooks
+
+# vim: noet
