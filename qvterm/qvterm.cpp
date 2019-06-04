@@ -673,14 +673,21 @@ void QVTerm::copyToClipboard()
 
     static auto fetchLine = [](VTermScreen *vts, QString &buf, int y, int xBegin, int xEnd) {
         static VTermScreenCell cell{};
+        int skipped = 0;
         for (int x = xBegin; x < xEnd; ++x) {
             VTermPos vtp{y, x};
             vterm_screen_get_cell(vts, vtp, &cell);
-            if (cell.chars[0] != '\0')
+            if (cell.chars[0]) {
+                for (; skipped; skipped--)
+                    buf.append(' ');
                 buf.append(QString::fromUcs4(cell.chars, cell.width));
-            else if (x == xEnd - 1)
-                buf.append('\n');
+            } else {
+                skipped++;
+            }
         }
+
+        if (!cell.chars[0])
+            buf.append('\n');
     };
 
     int maxWidth = size().width() / m_cellSize.width();
