@@ -16,6 +16,12 @@ add_compile_options(
     "$<$<COMPILE_LANGUAGE:CXX>:${cxx_warning_flags}>"
 )
 
+set(USE_SANITIZE NO CACHE BOOL "Enable address sanitization at a 2x performance cost")
+if (USE_SANITIZE)
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fsanitize=address>")
+    link_libraries(-fsanitize=address)
+endif()
+
 set(VENDOR_LIBVTERM YES CACHE BOOL "Use vendored libvterm")
 
 if (VENDOR_LIBVTERM)
