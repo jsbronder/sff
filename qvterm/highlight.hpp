@@ -1,5 +1,7 @@
 #pragma once
 
+#include "region.hpp"
+
 #include <QPoint>
 #include <QRect>
 
@@ -29,19 +31,14 @@ public:
     bool contains(int x, int y) const;
 
     /**
-     * End of the highlighted region in VTerm space
-     **/
-    const QPoint &end() const { return m_end; };
-
-    /**
      * Reset the highlight
      **/
     void reset();
 
     /**
-     * Start of the highlighted region in VTerm space
+     * Region being highlighted
      **/
-    const QPoint &start() const { return m_start; };
+    const Region &region() const { return m_region; };
 
     /**
      * Update the highlighted region
@@ -53,6 +50,5 @@ public:
 
 private:
     QPoint m_anchor{};
-    QPoint m_start{};
-    QPoint m_end{};
+    Region m_region{};
 };

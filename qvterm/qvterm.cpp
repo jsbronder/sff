@@ -677,34 +677,9 @@ void QVTerm::copyToClipboard()
     if (!m_highlight->active())
         return;
 
-    QString buf{};
-
-    static auto fetchLine = [](VTermScreen *vts, QString &buf, int y, int xBegin, int xEnd) {
-        static VTermScreenCell cell{};
-        int skipped = 0;
-        for (int x = xBegin; x < xEnd; ++x) {
-            VTermPos vtp{y, x};
-            vterm_screen_get_cell(vts, vtp, &cell);
-            if (cell.chars[0]) {
-                for (; skipped; skipped--)
-                    buf.append(' ');
-                buf.append(QString::fromUcs4(cell.chars, cell.width));
-            } else {
-                skipped++;
-            }
-        }
-
-        if (!cell.chars[0])
-            buf.append('\n');
-    };
-
-    int maxWidth = size().width() / m_cellSize.width();
-    for (int y = m_highlight->start().y(); y < m_highlight->end().y() + 1; ++y) {
-        int start = y == m_highlight->start().y() ? m_highlight->start().x() : 0;
-        int width = y == m_highlight->end().y() ? m_highlight->end().x() : maxWidth;
-        fetchLine(m_vtermScreen, buf, y, start, width);
-    }
-
+    QString buf = m_highlight->region().dumpString(termSize(), [this](int x, int y) {
+        return fetchCell(x, y);
+    });
     auto *cb = QApplication::clipboard();
     cb->setText(buf, QClipboard::Selection);
 }
