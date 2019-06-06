@@ -55,6 +55,18 @@ private:
     int sb_popline(int cols, VTermScreenCell *cells);
 
     void copyToClipboard();
+
+    /**
+     * Fetch a cell
+     *
+     * @param x - x coordinate in VTerm space
+     * @param y - y coordinate in VTerm space
+     *
+     * @return  - VTermScreenCell for the requested location or an empty one if
+     *            fetching failed.
+     **/
+    const VTermScreenCell *fetchCell(int x, int y) const;
+
     void flushToPty();
     void onPtyInput(int fd);
     void pasteFromClipboard();

@@ -191,6 +191,37 @@ QVTerm::~QVTerm()
     vterm_free(m_vterm);
 }
 
+const VTermScreenCell *QVTerm::fetchCell(int x, int y) const
+{
+    static VTermScreenCell emptyCell{};
+    emptyCell.width = 1;
+    emptyCell.chars[0] = '\0';
+
+    if (y < 0) {
+        // row -1 == m_sb[0], row -2 == m_sb[1]
+        size_t sbrow = (y + 1) * -1;
+        if (sbrow >= m_scrollback->size()) {
+            qDebug() << "Scrollback fetch row" << sbrow
+                     << "greater than scrollback size" << m_scrollback->size();
+            return &emptyCell;
+        }
+
+        const auto &sbl = m_scrollback->line(sbrow);
+        if (x < sbl.cols()) {
+            return sbl.cell(x);
+        } else {
+            return &emptyCell;
+        }
+    }
+
+    static VTermScreenCell refCell{};
+    VTermPos vtp{y, x};
+    vterm_screen_get_cell(m_vtermScreen, vtp, &refCell);
+    vterm_screen_convert_color_to_rgb(m_vtermScreen, &refCell.fg);
+    vterm_screen_convert_color_to_rgb(m_vtermScreen, &refCell.bg);
+    return &refCell;
+};
+
 void QVTerm::scrollPage(int pages)
 {
     int delta = size().height() * pages / m_cellSize.height() / 2;
@@ -360,36 +391,6 @@ void QVTerm::paintEvent(QPaintEvent *event)
 
     //    QElapsedTimer timer;
     //    timer.start();
-    auto fetchCell = [this](int row, int col) -> const VTermScreenCell * {
-        static VTermScreenCell emptyCell{};
-        emptyCell.width = 1;
-        emptyCell.chars[0] = '\0';
-
-        if (row < 0) {
-            // row -1 == m_sb[0], row -2 == m_sb[1]
-            size_t sbrow = (row + 1) * -1;
-            if (sbrow >= m_scrollback->size()) {
-                qDebug() << "Scrollback fetch row" << sbrow
-                         << "greater than scrollback size" << m_scrollback->size();
-                return &emptyCell;
-            }
-
-            const auto &sbl = m_scrollback->line(sbrow);
-            if (col < sbl.cols()) {
-                return sbl.cell(col);
-            } else {
-                return &emptyCell;
-            }
-        }
-
-        static VTermScreenCell refCell{};
-        VTermPos vtp{row, col};
-        vterm_screen_get_cell(m_vtermScreen, vtp, &refCell);
-        vterm_screen_convert_color_to_rgb(m_vtermScreen, &refCell.fg);
-        vterm_screen_convert_color_to_rgb(m_vtermScreen, &refCell.bg);
-        return &refCell;
-    };
-
     QPainter p(viewport());
     p.setCompositionMode(QPainter::CompositionMode_Source);
 
@@ -429,7 +430,7 @@ void QVTerm::paintEvent(QPaintEvent *event)
         int y = row * m_cellSize.height();
 
         for (int col = startCol; col < endCol; ++col) {
-            const VTermScreenCell *cell = fetchCell(phyrow, col);
+            const VTermScreenCell *cell = fetchCell(col, phyrow);
             const VTermColor *bg = &cell->bg;
             const VTermColor *fg = &cell->fg;
             int x = col * m_cellSize.width();
@@ -495,7 +496,7 @@ void QVTerm::paintEvent(QPaintEvent *event)
                 m_cellSize.width(),
                 m_cellSize.height(),
                 QColor(qRgb(0x40, 0x40, 0x40)));
-        const VTermScreenCell *cell = fetchCell(m_cursor.row, m_cursor.col);
+        const VTermScreenCell *cell = fetchCell(m_cursor.col, m_cursor.row);
         if (cell->chars[0]) {
             p.setPen(toQColor(defaultBg));
             p.drawText(
