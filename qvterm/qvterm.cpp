@@ -363,7 +363,7 @@ void QVTerm::mouseMoveEvent(QMouseEvent *event)
 
     m_highlight->update(
             event->pos().x() / m_cellSize.width(),
-            event->pos().y() / m_cellSize.height());
+            (event->pos().y() / m_cellSize.height()) - static_cast<int>(m_scrollback->offset()));
     viewport()->update();
 }
 
@@ -379,7 +379,7 @@ void QVTerm::mousePressEvent(QMouseEvent *event)
         event->accept();
         m_highlight->anchor(
                 event->pos().x() / m_cellSize.width(),
-                event->pos().y() / m_cellSize.height());
+                (event->pos().y() / m_cellSize.height()) - static_cast<int>(m_scrollback->offset()));
         viewport()->update();
     }
 }
@@ -441,7 +441,7 @@ void QVTerm::paintEvent(QPaintEvent *event)
             const VTermColor *bg = &cell->bg;
             const VTermColor *fg = &cell->fg;
             int x = col * m_cellSize.width();
-            bool highlight = m_highlight->contains(col, row);
+            bool highlight = m_highlight->contains(col, phyrow);
 
             if (static_cast<bool>(cell->attrs.reverse) || highlight) {
                 bg = &cell->fg;
