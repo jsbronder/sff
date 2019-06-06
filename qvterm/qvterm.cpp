@@ -289,6 +289,13 @@ void QVTerm::start()
     });
 }
 
+QSize QVTerm::termSize() const
+{
+    return {
+            size().width() / m_cellSize.width(),
+            size().height() / m_cellSize.height()};
+}
+
 void QVTerm::focusInEvent(QFocusEvent *event)
 {
     event->accept();

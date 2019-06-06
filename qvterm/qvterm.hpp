@@ -28,6 +28,11 @@ public:
     void setFont(const QFont &font);
     void start();
 
+    /**
+     * Size of displayed terminal in VTerm space
+     **/
+    QSize termSize() const;
+
 signals:
     void iconTextChanged(QString iconText);
     void titleChanged(QString title);
