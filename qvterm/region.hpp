@@ -52,6 +52,15 @@ public:
     }
 
     /**
+     * Dump the contents of the region exactly as it is stored
+     *
+     * @param termSize  - size of terminal
+     * @param fetchCell - function that will return VTermScreenCells for a given
+     *                    position
+     **/
+    QString dump(const QSize &termSize, const std::function<const VTermScreenCell *(int, int)> &fetchCell) const;
+
+    /**
      * Dump the contents of the region.  Empty cells will be ignored unless they
      * are followed on the same line by non-empty cells.  That is, this performs
      * the expected behavior for a copy operation on a selected region.

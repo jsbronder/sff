@@ -13,6 +13,26 @@ Region Region::fromPixelSpace(const QPoint &start, const QPoint &end, const QSiz
             {end.x() % cellSize.width(), end.y() / cellSize.height()}};
 }
 
+QString Region::dump(const QSize &termSize, const std::function<const VTermScreenCell *(int, int)> &fetchCell) const
+{
+    QString r{};
+    const VTermScreenCell *cell = nullptr;
+
+    for (int y = m_start.y(); y < m_end.y() + 1; ++y) {
+        int xStart = y == m_start.y() ? m_start.x() : 0;
+        int xEnd = y == m_end.y() ? m_end.x() + 1 : termSize.width();
+
+        for (int x = xStart; x < xEnd; ++x) {
+            cell = fetchCell(x, y);
+            if (cell->chars[0])
+                r.append(QString::fromUcs4(cell->chars, cell->width));
+            else
+                r.append('\0');
+        }
+    }
+    return r;
+}
+
 QString Region::dumpString(const QSize &termSize, const std::function<const VTermScreenCell *(int, int)> &fetchCell) const
 {
     QString r{};
