@@ -1,5 +1,7 @@
 #pragma once
 
+#include "region.hpp"
+
 #include <memory>
 
 #include <QAbstractScrollArea>
@@ -11,11 +13,14 @@ extern "C" {
 }
 
 class QKeyEvent;
+class QRegularExpression;
+class QRegularExpressionMatchIterator;
 class QResizeEvent;
 class QSocketNotifier;
 class QWidget;
 
 class Highlight;
+class Region;
 class Scrollback;
 
 class QVTerm : public QAbstractScrollArea {
@@ -23,6 +28,28 @@ class QVTerm : public QAbstractScrollArea {
 public:
     explicit QVTerm(QWidget *parent = nullptr);
     ~QVTerm();
+
+    /**
+     * Find matches for the given regular expression on the cells that are
+     * currently visible (not in the scrollback buffer).
+     *
+     * If there are any matches, the first one (starting from the bottom of the
+     * screen) will be highlighted.  Successive calls to matchNext() will cycle
+     * through all visible matches.
+     *
+     * @param regexp    - Regular expression to search for
+     **/
+    void match(const QRegularExpression *regexp);
+
+    /**
+     * Clear the current match, if any
+     **/
+    void matchClear();
+
+    /**
+     * Cycle to the next match if the matcher is active
+     **/
+    void matchNext();
 
     void scrollPage(int pages);
     void setFont(const QFont &font);
@@ -98,4 +125,7 @@ private:
 
     std::unique_ptr<Highlight> m_highlight;
     std::unique_ptr<Scrollback> m_scrollback;
+
+    std::vector<Region> m_matches;
+    std::vector<Region>::const_reverse_iterator m_match;
 };

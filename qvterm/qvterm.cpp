@@ -1,5 +1,6 @@
 #include "qvterm.hpp"
 #include "highlight.hpp"
+#include "region.hpp"
 #include "scrollback.hpp"
 
 #include <QAbstractScrollArea>
@@ -9,6 +10,7 @@
 #include <QDebug>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QRegularExpression>
 #include <QScrollBar>
 #include <QSocketNotifier>
 
@@ -221,6 +223,67 @@ const VTermScreenCell *QVTerm::fetchCell(int x, int y) const
     vterm_screen_convert_color_to_rgb(m_vtermScreen, &refCell.bg);
     return &refCell;
 };
+
+void QVTerm::match(const QRegularExpression *regexp)
+{
+    int width = termSize().width();
+    int height = termSize().height();
+    QString dump = Region({0, 0}, {width, height}).dump(termSize(), [this](int x, int y) {
+        return fetchCell(x, y);
+    });
+
+    m_matches.clear();
+    auto matchIter = regexp->globalMatch(dump);
+    while (matchIter.isValid() && matchIter.hasNext()) {
+        auto match = matchIter.next();
+        int capturedEnd = match.capturedEnd() - 1;
+
+        int yStart = match.capturedStart() / width;
+        int yEnd = capturedEnd / width;
+        int xStart = match.capturedStart() % width;
+        int xEnd = capturedEnd % width;
+        m_matches.emplace_back(QPoint{xStart, yStart}, QPoint{xEnd, yEnd});
+    }
+    m_match = m_matches.crbegin();
+
+    if (m_match != m_matches.crend()) {
+        auto *cb = QApplication::clipboard();
+        QString matched = m_match->dumpString(termSize(), [this](int x, int y) {
+            return fetchCell(x, y);
+        });
+        cb->setText(matched, QClipboard::Selection);
+        viewport()->update(m_match->pixelRect(termSize(), m_cellSize));
+    }
+}
+
+void QVTerm::matchClear()
+{
+    if (m_match != m_matches.crend())
+        viewport()->update(m_match->pixelRect(termSize(), m_cellSize));
+    m_matches.clear();
+    m_match = m_matches.crend();
+}
+
+void QVTerm::matchNext()
+{
+    if (m_matches.empty())
+        return;
+
+    viewport()->update(m_match->pixelRect(termSize(), m_cellSize));
+    m_match++;
+
+    if (m_match == m_matches.crend())
+        m_match = m_matches.crbegin();
+
+    if (m_match != m_matches.crend()) {
+        auto *cb = QApplication::clipboard();
+        QString matched = m_match->dumpString(termSize(), [this](int x, int y) {
+            return fetchCell(x, y);
+        });
+        cb->setText(matched, QClipboard::Selection);
+        viewport()->update(m_match->pixelRect(termSize(), m_cellSize));
+    }
+}
 
 void QVTerm::scrollPage(int pages)
 {
@@ -441,7 +504,8 @@ void QVTerm::paintEvent(QPaintEvent *event)
             const VTermColor *bg = &cell->bg;
             const VTermColor *fg = &cell->fg;
             int x = col * m_cellSize.width();
-            bool highlight = m_highlight->contains(col, phyrow);
+            bool highlight = (m_highlight->contains(col, phyrow)
+                    || (m_match != m_matches.crend() && m_match->contains(col, phyrow)));
 
             if (static_cast<bool>(cell->attrs.reverse) || highlight) {
                 bg = &cell->fg;
