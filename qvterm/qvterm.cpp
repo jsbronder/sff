@@ -701,6 +701,8 @@ int QVTerm::settermprop(VTermProp prop, VTermValue *val)
             break;
         case VTERM_PROP_ALTSCREEN:
             m_altscreen = val->boolean;
+            m_matches.clear();
+            m_highlight->reset();
             break;
         case VTERM_PROP_MOUSE:
             qDebug() << "Ignoring VTERM_PROP_MOUSE" << val->number;
