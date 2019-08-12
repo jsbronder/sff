@@ -391,6 +391,9 @@ void QVTerm::keyPressEvent(QKeyEvent *event)
     VTermKey key = vtermKey(event->key(), keypad);
 
     if (key != VTERM_KEY_NONE) {
+        if (mod == VTERM_MOD_SHIFT && key == VTERM_KEY_ESCAPE)
+            mod = VTERM_MOD_NONE;
+
         vterm_keyboard_key(m_vterm, key, mod);
         m_scrollback->unscroll();
     } else if (event->text().length()) {
