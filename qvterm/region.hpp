@@ -54,6 +54,34 @@ public:
     }
 
     /**
+     * Test if a region is inside of this one
+     *
+     * @param other - region to check
+     *
+     * @return - true if this region contains the other
+     **/
+    bool contains(const Region &other) const
+    {
+        return (
+                (m_start.y() < other.m_start.y()
+                        || (m_start.y() == other.m_start.y() && m_start.x() <= other.m_start.x()))
+                && (m_end.y() > other.m_end.y()
+                           || (m_end.y() == other.m_end.y() && m_end.x() >= other.m_end.x())));
+    }
+
+    /**
+     * Test if a region contains a QPoint
+     *
+     * @param point - point to check for inclusion
+     *
+     * @return  - true if point is inside the region, false otherwise
+     **/
+    bool contains(const QPoint &point) const
+    {
+        return contains(point.x(), point.y());
+    }
+
+    /**
      * Dump the contents of the region exactly as it is stored
      *
      * @param termSize  - size of terminal
