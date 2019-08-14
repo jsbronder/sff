@@ -82,6 +82,15 @@ public:
     }
 
     /**
+     * Check if this region overlaps another.
+     *
+     * @param other - Region to compare against
+     *
+     * @return  - true if the regions overlap, false otherwise
+     **/
+    bool overlaps(const Region &other) const;
+
+    /**
      * Translate region into a rectangle in pixel space
      *
      * @param termSize  - size of terminal
