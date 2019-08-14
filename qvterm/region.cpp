@@ -1,3 +1,5 @@
+#include <QDebug>
+
 #include "region.hpp"
 
 Region::Region(QPoint start, QPoint end) :
@@ -80,4 +82,10 @@ void Region::shift(const QPoint &delta)
 {
     m_start += delta;
     m_end += delta;
+}
+
+QDebug operator<<(QDebug dbg, const Region &r)
+{
+    dbg.nospace() << "Region(" << r.start() << ", " << r.end() << ")";
+    return dbg.space();
 }

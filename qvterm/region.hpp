@@ -6,6 +6,8 @@
 
 #include <functional>
 
+class QDebug;
+
 extern "C" {
 #include <vterm.h>
 }
@@ -110,3 +112,5 @@ private:
     QPoint m_start;
     QPoint m_end;
 };
+
+QDebug operator<<(QDebug dbg, const Region &r);
