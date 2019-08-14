@@ -38,7 +38,7 @@ public:
     /**
      * Region being highlighted
      **/
-    const Region &region() const { return m_region; };
+    Region &region() { return m_region; };
 
     /**
      * Update the highlighted region
