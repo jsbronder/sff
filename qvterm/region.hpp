@@ -102,6 +102,11 @@ public:
     QString dumpString(const QSize &termSize, const std::function<const VTermScreenCell *(int, int)> &fetchCell) const;
 
     /**
+     * Endpoint of the region
+     **/
+    const QPoint &end() const { return m_end; }
+
+    /**
      * Test if the region is Null
      **/
     bool isNull() const
@@ -132,6 +137,11 @@ public:
      * @param delta - QPoint with amount to shift on each axis
      **/
     void shift(const QPoint &delta);
+
+    /**
+     * Starting point of the region
+     **/
+    const QPoint &start() const { return m_start; }
 
     /**
      * Update the region
