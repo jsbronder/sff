@@ -88,6 +88,13 @@ public:
     QRect pixelRect(const QSize &termSize, const QSize &cellSize) const;
 
     /**
+     * Shift the start and end points by the given amount
+     *
+     * @param delta - QPoint with amount to shift on each axis
+     **/
+    void shift(const QPoint &delta);
+
+    /**
      * Update the region
      *
      * @param start - New start point

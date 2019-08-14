@@ -75,3 +75,9 @@ QRect Region::pixelRect(const QSize &termSize, const QSize &cellSize) const
 
     return {topLeft, bottomRight};
 }
+
+void Region::shift(const QPoint &delta)
+{
+    m_start += delta;
+    m_end += delta;
+}
