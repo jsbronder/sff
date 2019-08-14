@@ -654,6 +654,7 @@ int QVTerm::damage(VTermRect rect)
             QPoint(rect.end_col, rect.end_row)};
     if (m_highlight->region().overlaps(damRegion))
         m_highlight->reset();
+    matchClear();
 
     return 1;
 }
