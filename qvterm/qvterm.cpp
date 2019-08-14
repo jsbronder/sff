@@ -648,18 +648,52 @@ int QVTerm::damage(VTermRect rect)
             rect.end_col * m_cellSize.width(),
             rect.end_row * m_cellSize.height());
     viewport()->update(QRect(topLeft, bottomRight));
+
+    Region damRegion{
+            QPoint(rect.start_col, rect.start_row),
+            QPoint(rect.end_col, rect.end_row)};
+    if (m_highlight->region().overlaps(damRegion))
+        m_highlight->reset();
+
     return 1;
 }
 
 int QVTerm::moverect(VTermRect dest, VTermRect src)
 {
-    auto topLeft = QPoint(
-            std::min(dest.start_col, src.start_col) * m_cellSize.width(),
-            std::min(dest.start_row, src.start_row) * m_cellSize.height());
-    auto bottomRight = QPoint(
-            std::max(dest.end_col, src.end_col) * m_cellSize.width(),
-            std::max(dest.end_row, src.end_row) * m_cellSize.height());
+    int tlx = std::min(dest.start_col, src.start_col);
+    int tly = std::min(dest.start_row, src.start_row);
+    int brx = std::max(dest.end_col, src.end_col);
+    int bry = std::max(dest.end_row, src.end_row);
+
+    QPoint topLeft{tlx * m_cellSize.width(), tly * m_cellSize.height()};
+    QPoint bottomRight{brx * m_cellSize.width(), bry * m_cellSize.height()};
     viewport()->update(QRect(topLeft, bottomRight));
+
+    do {
+        if (!m_highlight->active())
+            break;
+
+        Region damRegion{{tlx, tly}, {brx, bry}};
+
+        if (!damRegion.contains(m_highlight->region().start())
+                && !damRegion.contains(m_highlight->region().end())) {
+            break;
+        }
+
+        if (damRegion.contains(m_highlight->region())
+                && (m_highlight->region().start().y() == m_highlight->region().end().y()
+                           || (src.start_col == 0 && src.end_col == termSize().width()))) {
+            QPoint delta{
+                    dest.start_col - src.start_col,
+                    dest.start_row - src.start_row};
+            m_highlight->region().shift(delta);
+            if (m_highlight->region().start().y() < 0)
+                m_highlight->reset();
+        } else {
+            m_highlight->reset();
+        }
+    } while (false);
+
     return 1;
 }
 
