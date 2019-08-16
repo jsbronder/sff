@@ -73,9 +73,9 @@ VTermKey vtermKey(int key, bool keypad)
         case Qt::Key_End:
             return VTERM_KEY_END;
         case Qt::Key_PageUp:
-            return keypad ? VTERM_KEY_PAGEUP : VTERM_KEY_NONE;
+            return VTERM_KEY_PAGEUP;
         case Qt::Key_PageDown:
-            return keypad ? VTERM_KEY_PAGEDOWN : VTERM_KEY_NONE;
+            return VTERM_KEY_PAGEDOWN;
         case Qt::Key_multiply:
             return keypad ? VTERM_KEY_KP_MULT : VTERM_KEY_NONE;
         case Qt::Key_Plus:
