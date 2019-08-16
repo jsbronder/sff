@@ -48,27 +48,20 @@ int main(int argc, char **argv)
         qvterm.scrollPage(-1);
     });
 
-    bool matching = false;
     QShortcut esc{QKeySequence{Qt::Key_Escape}, &win};
-    win.connect(&esc, &QShortcut::activated, [&qvterm, &esc, &matching]() {
+    win.connect(&esc, &QShortcut::activated, [&qvterm, &esc]() {
         qvterm.matchClear();
         esc.setEnabled(false);
-        matching = false;
     });
     esc.setEnabled(false);
 
     QShortcut findUrl{QKeySequence{Qt::CTRL + Qt::Key_M}, &win};
-    win.connect(&findUrl, &QShortcut::activated, [&qvterm, &matching, &esc]() {
+    win.connect(&findUrl, &QShortcut::activated, [&qvterm, &esc]() {
         static QRegularExpression re(urlMatch,
                 QRegularExpression::DotMatchesEverythingOption | QRegularExpression::CaseInsensitiveOption);
 
         esc.setEnabled(true);
-        if (matching) {
-            qvterm.matchNext();
-        } else {
-            matching = true;
-            qvterm.match(&re);
-        }
+        qvterm.match(&re);
     });
 
     app.exec();

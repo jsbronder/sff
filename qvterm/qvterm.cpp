@@ -226,6 +226,10 @@ const VTermScreenCell *QVTerm::fetchCell(int x, int y) const
 
 void QVTerm::match(const QRegularExpression *regexp)
 {
+    if (!m_matches.empty()) {
+        matchNext();
+        return;
+    }
     int width = termSize().width();
     int height = termSize().height();
     QString dump = Region({0, 0}, {width, height}).dump(termSize(), [this](int x, int y) {
