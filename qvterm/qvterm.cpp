@@ -395,7 +395,8 @@ void QVTerm::keyPressEvent(QKeyEvent *event)
     VTermKey key = vtermKey(event->key(), keypad);
 
     if (key != VTERM_KEY_NONE) {
-        if (mod == VTERM_MOD_SHIFT && key == VTERM_KEY_ESCAPE)
+        if (mod == VTERM_MOD_SHIFT
+                && (key == VTERM_KEY_ESCAPE || key == VTERM_KEY_BACKSPACE))
             mod = VTERM_MOD_NONE;
 
         vterm_keyboard_key(m_vterm, key, mod);
