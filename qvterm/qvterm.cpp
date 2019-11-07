@@ -305,12 +305,12 @@ void QVTerm::setFont(const QFont &font)
 
 void QVTerm::start()
 {
-    struct termios termios;
-    bzero(&termios, sizeof(struct termios));
+    struct termios termios = {};
+
     termios.c_iflag = ICRNL | IXON | IUTF8,
     termios.c_oflag = OPOST | ONLCR | TAB0 | NL0 | CR0 | BS0 | VT0 | FF0,
     termios.c_cflag = CS8 | CREAD,
-    termios.c_lflag = ISIG | ICANON | IEXTEN | ECHO | ECHOE | ECHOK,
+    termios.c_lflag = ISIG | ICANON | IEXTEN | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE,
     termios.c_cc[VINTR] = 0x1f & 'C';
     termios.c_cc[VQUIT] = 0x1f & '\\';
     termios.c_cc[VERASE] = 0x7f;
