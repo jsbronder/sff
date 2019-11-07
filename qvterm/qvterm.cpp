@@ -406,20 +406,15 @@ void QVTerm::keyPressEvent(QKeyEvent *event)
         if (event->key() == Qt::Key_Space && mod == VTERM_MOD_SHIFT)
             mod = VTERM_MOD_NONE;
 
-        // Default to nativeVirtualKey which will send <modifier>+<key> rather
-        // than text() which will map the combination (meaning that the shell
-        // will get <modifier>+<<modifier>+<key>>.
-        if (event->nativeVirtualKey()) {
-            vterm_keyboard_unichar(
-                    m_vterm,
-                    event->nativeVirtualKey(),
-                    mod);
-        } else {
-            vterm_keyboard_unichar(
-                    m_vterm,
-                    event->text().toUcs4()[0],
-                    mod);
-        }
+        // Per https://github.com/justinmk/neovim/commit/317d5ca7b0f92ef42de989b3556ca9503f0a3bf6
+        // libvterm prefers we send the full keycode rather than sending the
+        // ctrl modifier.  This helps with ncurses applications which otherwise
+        // do not recognize ctrl+<key> and in the shell for getting common control characters
+        // like ctrl+i for tab or ctrl+j for newline.
+        vterm_keyboard_unichar(
+                m_vterm,
+                event->text().toUcs4()[0],
+                static_cast<VTermModifier>(mod & ~VTERM_MOD_CTRL));
         m_scrollback->unscroll();
     }
 
