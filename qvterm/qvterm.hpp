@@ -114,6 +114,7 @@ private:
 
     QFont m_font;
     QSize m_cellSize;
+    int m_cellBaseline;
     bool m_altscreen{false};
     bool m_ignoreScroll{false};
 

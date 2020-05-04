@@ -300,6 +300,7 @@ void QVTerm::setFont(const QFont &font)
     m_font = font;
     QFontMetrics qfm{m_font};
     m_cellSize = {qfm.averageCharWidth(), qfm.ascent() + qfm.descent()};
+    m_cellBaseline = qfm.ascent();
     QAbstractScrollArea::setFont(m_font);
 }
 
@@ -494,9 +495,28 @@ void QVTerm::paintEvent(QPaintEvent *event)
     defaultBg.type = VTERM_COLOR_RGB;
 
     QFont fnt{m_font};
-    p.setFont(fnt);
     p.setPen(toQColor(defaultFg));
     p.fillRect(event->rect(), toQColor(defaultBg));
+
+    QString buf{};
+    QVector<QPointF> positions{};
+
+    auto paintBuffer = [&p, &fnt, &buf, &positions]() {
+        if (buf.isEmpty())
+            return;
+
+        static QPointF origin{0, 0};
+        auto rawFont = QRawFont::fromFont(fnt);
+
+        QGlyphRun run{};
+        run.setRawFont(rawFont);
+        run.setGlyphIndexes(rawFont.glyphIndexesForString(buf));
+        run.setPositions(positions);
+        p.drawGlyphRun(origin, run);
+
+        buf.clear();
+        positions.clear();
+    };
 
     for (int row = startRow; row < endRow; row++) {
         int phyrow = row - static_cast<int>(m_scrollback->offset());
@@ -528,35 +548,39 @@ void QVTerm::paintEvent(QPaintEvent *event)
                 continue;
 
             if (!colorEqual(p.pen().color(), *fg)) {
+                paintBuffer();
                 p.setPen(toQColor(*fg));
             }
 
-            if (static_cast<bool>(cell->attrs.bold) != fnt.bold()) {
-                fnt.setBold(static_cast<bool>(cell->attrs.bold));
+            if (false) {
+                if (static_cast<bool>(cell->attrs.bold) != fnt.bold()) {
+                    paintBuffer();
+                    fnt.setBold(static_cast<bool>(cell->attrs.bold));
+                }
             }
 
             if (static_cast<bool>(cell->attrs.underline) != fnt.underline()) {
+                paintBuffer();
                 fnt.setUnderline(static_cast<bool>(cell->attrs.underline));
             }
 
             if (static_cast<bool>(cell->attrs.italic) != fnt.italic()) {
+                paintBuffer();
                 fnt.setItalic(static_cast<bool>(cell->attrs.italic));
             }
 
             // No blink.
 
             if (static_cast<bool>(cell->attrs.strike) != fnt.strikeOut()) {
+                paintBuffer();
                 fnt.setStrikeOut(static_cast<bool>(cell->attrs.strike));
             }
 
-            p.drawText(
-                    x,
-                    y,
-                    cell->width * m_cellSize.width(),
-                    m_cellSize.height(),
-                    0,
-                    QString::fromUcs4(cell->chars, cell->width));
+            buf.append(QString::fromUcs4(cell->chars, cell->width));
+            positions.append({static_cast<qreal>(x),
+                    static_cast<qreal>(y + m_cellBaseline)});
         }
+        paintBuffer();
     }
 
     if (hasFocus() && m_cursor.visible) {
