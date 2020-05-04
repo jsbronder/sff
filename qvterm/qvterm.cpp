@@ -683,7 +683,7 @@ int QVTerm::moverect(VTermRect dest, VTermRect src)
 
         if (damRegion.contains(m_highlight->region())
                 && (m_highlight->region().start().y() == m_highlight->region().end().y()
-                           || (src.start_col == 0 && src.end_col == termSize().width()))) {
+                        || (src.start_col == 0 && src.end_col == termSize().width()))) {
             QPoint delta{
                     dest.start_col - src.start_col,
                     dest.start_row - src.start_row};
