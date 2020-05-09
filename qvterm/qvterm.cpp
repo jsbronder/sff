@@ -230,9 +230,9 @@ void QVTerm::match(const QRegularExpression *regexp)
         matchNext();
         return;
     }
-    int width = termSize().width();
-    int height = termSize().height();
-    QString dump = Region({0, 0}, {width, height}).dump(termSize(), [this](int x, int y) {
+    int width = m_vtermSize.width();
+    int height = m_vtermSize.height();
+    QString dump = Region({0, 0}, {width, height}).dump(m_vtermSize, [this](int x, int y) {
         return fetchCell(x, y);
     });
 
@@ -252,18 +252,18 @@ void QVTerm::match(const QRegularExpression *regexp)
 
     if (m_match != m_matches.crend()) {
         auto *cb = QApplication::clipboard();
-        QString matched = m_match->dumpString(termSize(), [this](int x, int y) {
+        QString matched = m_match->dumpString(m_vtermSize, [this](int x, int y) {
             return fetchCell(x, y);
         });
         cb->setText(matched, QClipboard::Selection);
-        viewport()->update(m_match->pixelRect(termSize(), m_cellSize));
+        viewport()->update(m_match->pixelRect(m_vtermSize, m_cellSize));
     }
 }
 
 void QVTerm::matchClear()
 {
     if (m_match != m_matches.crend())
-        viewport()->update(m_match->pixelRect(termSize(), m_cellSize));
+        viewport()->update(m_match->pixelRect(m_vtermSize, m_cellSize));
     m_matches.clear();
     m_match = m_matches.crend();
 }
@@ -273,7 +273,7 @@ void QVTerm::matchNext()
     if (m_matches.empty())
         return;
 
-    viewport()->update(m_match->pixelRect(termSize(), m_cellSize));
+    viewport()->update(m_match->pixelRect(m_vtermSize, m_cellSize));
     m_match++;
 
     if (m_match == m_matches.crend())
@@ -281,11 +281,11 @@ void QVTerm::matchNext()
 
     if (m_match != m_matches.crend()) {
         auto *cb = QApplication::clipboard();
-        QString matched = m_match->dumpString(termSize(), [this](int x, int y) {
+        QString matched = m_match->dumpString(m_vtermSize, [this](int x, int y) {
             return fetchCell(x, y);
         });
         cb->setText(matched, QClipboard::Selection);
-        viewport()->update(m_match->pixelRect(termSize(), m_cellSize));
+        viewport()->update(m_match->pixelRect(m_vtermSize, m_cellSize));
     }
 }
 
@@ -302,6 +302,10 @@ void QVTerm::setFont(const QFont &font)
     m_cellSize = {qfm.averageCharWidth(), qfm.ascent() + qfm.descent()};
     m_cellBaseline = qfm.ascent();
     QAbstractScrollArea::setFont(m_font);
+    m_vtermSize = {
+            size().width() / m_cellSize.width(),
+            size().height() / m_cellSize.height(),
+    };
 }
 
 void QVTerm::start()
@@ -355,13 +359,6 @@ void QVTerm::start()
     connect(m_ptysn, &QSocketNotifier::activated, [this](int fd) {
         onPtyInput(fd);
     });
-}
-
-QSize QVTerm::termSize() const
-{
-    return {
-            size().width() / m_cellSize.width(),
-            size().height() / m_cellSize.height()};
 }
 
 void QVTerm::focusInEvent(QFocusEvent *event)
@@ -468,15 +465,14 @@ void QVTerm::paintEvent(QPaintEvent *event)
     QPainter p(viewport());
     p.setCompositionMode(QPainter::CompositionMode_Source);
 
-    int startCol = event->rect().x() / m_cellSize.width();
-    int endCol = startCol + event->rect().width() / m_cellSize.width();
-    int startRow = event->rect().y() / m_cellSize.height();
-    int endRow = startRow + event->rect().height() / m_cellSize.height();
-
     //qDebug() << "sc:" << startCol
     //    << "ec:" << endCol
     //    << "sr:" << startRow
     //    << "er:" << endRow;
+
+    static auto ceil = [](int v, int div) {
+        return (v / div) + (v % div != 0);
+    };
 
     static auto colorEqual = [](const QColor &qc, const VTermColor &vc) {
         return (qc.red() == vc.rgb.red
@@ -518,15 +514,18 @@ void QVTerm::paintEvent(QPaintEvent *event)
         positions.clear();
     };
 
+    int startCol = event->rect().x() / m_cellSize.width();
+    int endCol = startCol + ceil(event->rect().width(), m_cellSize.width());
+    int startRow = event->rect().y() / m_cellSize.height();
+    int endRow = startRow + ceil(event->rect().height(), m_cellSize.height());
+
     for (int row = startRow; row < endRow; row++) {
         int phyrow = row - static_cast<int>(m_scrollback->offset());
-        int y = row * m_cellSize.height();
 
         for (int col = startCol; col < endCol; ++col) {
             const VTermScreenCell *cell = fetchCell(col, phyrow);
             const VTermColor *bg = &cell->bg;
             const VTermColor *fg = &cell->fg;
-            int x = col * m_cellSize.width();
             bool highlight = (m_highlight->contains(col, phyrow)
                     || (m_match != m_matches.crend() && m_match->contains(col, phyrow)));
 
@@ -537,10 +536,7 @@ void QVTerm::paintEvent(QPaintEvent *event)
 
             if (!vterm_color_is_equal(bg, &defaultBg)) {
                 p.fillRect(
-                        x,
-                        y,
-                        cell->width * m_cellSize.width(),
-                        m_cellSize.height(),
+                        pixelRect(col, row, cell->width, 1),
                         toQColor(*bg));
             }
 
@@ -577,35 +573,25 @@ void QVTerm::paintEvent(QPaintEvent *event)
             }
 
             buf.append(QString::fromUcs4(cell->chars, cell->width));
-            positions.append({static_cast<qreal>(x),
-                    static_cast<qreal>(y + m_cellBaseline)});
+
+            positions.append({static_cast<qreal>(pixelCol(col)),
+                    static_cast<qreal>(pixelRow(row) + m_cellBaseline)});
         }
         paintBuffer();
     }
 
     if (hasFocus() && m_cursor.visible) {
-        int x = m_cursor.col * m_cellSize.width();
-        int y = m_cursor.row * m_cellSize.height();
-        p.save();
-        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
-        p.fillRect(
-                x,
-                y,
-                m_cellSize.width(),
-                m_cellSize.height(),
-                QColor(qRgb(0x40, 0x40, 0x40)));
         const VTermScreenCell *cell = fetchCell(m_cursor.col, m_cursor.row);
+        auto rect = pixelRect(m_cursor.col, m_cursor.row, cell->width, 1);
+        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        p.fillRect(rect, QColor(qRgb(0x40, 0x40, 0x40)));
         if (cell->chars[0]) {
             p.setPen(toQColor(defaultBg));
             p.drawText(
-                    x,
-                    y,
-                    cell->width * m_cellSize.width(),
-                    m_cellSize.height(),
+                    rect,
                     0,
                     QString::fromUcs4(cell->chars, cell->width));
         }
-        p.restore();
     }
 
     //qDebug() << "repaint took" << timer.elapsed() << "ms";
@@ -622,16 +608,18 @@ void QVTerm::resizeEvent(QResizeEvent *event)
     m_ignoreScroll = true;
 
     m_highlight->reset();
-    int height = size().height() / m_cellSize.height();
-    int width = size().width() / m_cellSize.width();
+    m_vtermSize = {
+            size().width() / m_cellSize.width(),
+            size().height() / m_cellSize.height(),
+    };
     struct winsize wsz = {
-            .ws_row = static_cast<short unsigned int>(height),
-            .ws_col = static_cast<short unsigned int>(width),
+            .ws_row = static_cast<short unsigned int>(m_vtermSize.height()),
+            .ws_col = static_cast<short unsigned int>(m_vtermSize.width()),
             .ws_xpixel = 0,
             .ws_ypixel = 0,
     };
     ioctl(m_pty, TIOCSWINSZ, &wsz);
-    vterm_set_size(m_vterm, height, width);
+    vterm_set_size(m_vterm, m_vtermSize.height(), m_vtermSize.width());
     vterm_screen_flush_damage(m_vtermScreen);
     m_ignoreScroll = false;
 }
@@ -665,13 +653,7 @@ void QVTerm::scrollContentsBy(int dx, int dy)
 
 int QVTerm::damage(VTermRect rect)
 {
-    auto topLeft = QPoint(
-            rect.start_col * m_cellSize.width(),
-            rect.start_row * m_cellSize.height());
-    auto bottomRight = QPoint(
-            rect.end_col * m_cellSize.width(),
-            rect.end_row * m_cellSize.height());
-    viewport()->update(QRect(topLeft, bottomRight));
+    viewport()->update(pixelRect(rect));
 
     Region damRegion{
             QPoint(rect.start_col, rect.start_row),
@@ -690,9 +672,12 @@ int QVTerm::moverect(VTermRect dest, VTermRect src)
     int brx = std::max(dest.end_col, src.end_col);
     int bry = std::max(dest.end_row, src.end_row);
 
-    QPoint topLeft{tlx * m_cellSize.width(), tly * m_cellSize.height()};
-    QPoint bottomRight{brx * m_cellSize.width(), bry * m_cellSize.height()};
-    viewport()->update(QRect(topLeft, bottomRight));
+    viewport()->update(pixelRect({
+            .start_row = tly,
+            .end_row = bry,
+            .start_col = tlx,
+            .end_col = brx,
+    }));
 
     do {
         if (!m_highlight->active())
@@ -707,7 +692,7 @@ int QVTerm::moverect(VTermRect dest, VTermRect src)
 
         if (damRegion.contains(m_highlight->region())
                 && (m_highlight->region().start().y() == m_highlight->region().end().y()
-                        || (src.start_col == 0 && src.end_col == termSize().width()))) {
+                        || (src.start_col == 0 && src.end_col == m_vtermSize.width()))) {
             QPoint delta{
                     dest.start_col - src.start_col,
                     dest.start_row - src.start_row};
@@ -725,17 +710,17 @@ int QVTerm::moverect(VTermRect dest, VTermRect src)
 int QVTerm::movecursor(VTermPos pos, VTermPos oldpos, int visible)
 {
     if (pos.row == oldpos.row) {
-        viewport()->update(
-                std::min(pos.col, oldpos.col) * m_cellSize.width(),
-                pos.row * m_cellSize.height(),
-                (std::abs(pos.col - oldpos.col) + 1) * m_cellSize.width(),
-                m_cellSize.height());
+        viewport()->update(pixelRect(
+                std::min(pos.col, oldpos.col),
+                pos.row,
+                (std::abs(pos.col - oldpos.col) + 1),
+                1));
     } else {
         viewport()->update(
                 0,
-                std::min(pos.row, oldpos.row) * m_cellSize.height(),
+                pixelRow(std::min(pos.row, oldpos.row)),
                 size().width(),
-                2 * m_cellSize.height());
+                pixelRow(2));
     }
     m_cursor.row = pos.row;
     m_cursor.col = pos.col;
@@ -805,7 +790,7 @@ void QVTerm::copyToClipboard()
     if (!m_highlight->active())
         return;
 
-    QString buf = m_highlight->region().dumpString(termSize(), [this](int x, int y) {
+    QString buf = m_highlight->region().dumpString(m_vtermSize, [this](int x, int y) {
         return fetchCell(x, y);
     });
     auto *cb = QApplication::clipboard();
@@ -887,9 +872,40 @@ void QVTerm::pasteFromClipboard()
 
 void QVTerm::repaintCursor()
 {
-    viewport()->update(
-            m_cursor.col * m_cellSize.width(),
-            m_cursor.row * m_cellSize.height(),
-            m_cellSize.width(),
-            m_cellSize.height());
+    viewport()->update(pixelRect(
+            m_cursor.col,
+            m_cursor.row,
+            1,
+            1));
+}
+
+QRect QVTerm::pixelRect(const VTermRect &rect) const
+{
+    auto topLeft = QPoint(
+            pixelCol(rect.start_col),
+            pixelRow(rect.start_row));
+    auto bottomRight = QPoint(
+            pixelCol(rect.end_col),
+            pixelRow(rect.end_row));
+    return {topLeft, bottomRight};
+}
+
+QRect QVTerm::pixelRect(int x, int y, int width, int height) const
+{
+    return {
+            pixelCol(x),
+            pixelRow(y),
+            pixelCol(width),
+            pixelRow(height),
+    };
+}
+
+int QVTerm::pixelCol(int x) const
+{
+    return x * m_cellSize.width();
+}
+
+int QVTerm::pixelRow(int y) const
+{
+    return y * m_cellSize.height();
 }

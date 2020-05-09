@@ -55,11 +55,6 @@ public:
     void setFont(const QFont &font);
     void start();
 
-    /**
-     * Size of displayed terminal in VTerm space
-     **/
-    QSize termSize() const;
-
 signals:
     void iconTextChanged(QString iconText);
     void titleChanged(QString title);
@@ -104,9 +99,18 @@ private:
     void pasteFromClipboard();
     void repaintCursor();
 
+    /**
+     * Convert VTerm coordinates to Qt pixel space
+     **/
+    QRect pixelRect(const VTermRect &rect) const;
+    QRect pixelRect(int x, int y, int width, int height) const;
+    int pixelCol(int x) const;
+    int pixelRow(int y) const;
+
 private:
     VTerm *m_vterm;
     VTermScreen *m_vtermScreen;
+    QSize m_vtermSize;
 
     int m_pty{-1};
     QSocketNotifier *m_ptysn;
