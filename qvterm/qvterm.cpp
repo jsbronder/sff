@@ -611,7 +611,9 @@ void QVTerm::paintEvent(QPaintEvent *event)
         paintBuffer();
     }
 
-    if (hasFocus() && m_cursor.visible) {
+    if (hasFocus()
+            && m_cursor.visible
+            && event->rect().contains(pixelCol(m_cursor.col), pixelRow(m_cursor.row))) {
         const VTermScreenCell *cell = fetchCell(m_cursor.col, m_cursor.row);
         auto rect = pixelRect(m_cursor.col, m_cursor.row, cell->width, 1);
         p.setCompositionMode(QPainter::CompositionMode_SourceOver);
