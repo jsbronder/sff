@@ -510,13 +510,19 @@ void QVTerm::paintEvent(QPaintEvent *event)
     };
 
     VTermColor defaultBg;
-    VTermColor defaultFg;
-    vterm_state_get_default_colors(vterm_obtain_state(m_vterm), &defaultFg, &defaultBg);
-    // We want to compare the cell bg against this later and cells don't set DEFAULT_BG
-    defaultBg.type = VTERM_COLOR_RGB;
+    if (!m_altscreen) {
+        VTermColor defaultFg;
+        vterm_state_get_default_colors(vterm_obtain_state(m_vterm), &defaultFg, &defaultBg);
+        // We want to compare the cell bg against this later and cells don't
+        // set DEFAULT_BG
+        defaultBg.type = VTERM_COLOR_RGB;
+    } else {
+        // This is a slightly better guess when in an altscreen
+        const VTermScreenCell *cell = fetchCell(0, 0);
+        defaultBg = cell->bg;
+    }
 
     QFont fnt{m_font};
-    p.setPen(toQColor(defaultFg));
     p.fillRect(event->rect(), toQColor(defaultBg));
 
     QString buf{};
