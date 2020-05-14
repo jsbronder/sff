@@ -125,10 +125,7 @@ QVTerm::QVTerm(QWidget *parent) :
             auto p = static_cast<QVTerm*>(user);
             return p->damage(rect);
         },
-        .moverect = [](VTermRect dest, VTermRect src, void *user) {
-            auto p = static_cast<QVTerm*>(user);
-            return p->moverect(dest, src);
-        },
+        .moverect = nullptr,
         .movecursor = [](VTermPos pos, VTermPos oldpos, int visible, void *user) {
             auto p = static_cast<QVTerm*>(user);
             return p->movecursor(pos, oldpos, visible);
@@ -703,48 +700,6 @@ int QVTerm::damage(VTermRect rect)
     if (m_highlight->region().overlaps(damRegion))
         m_highlight->reset();
     matchClear();
-
-    return 1;
-}
-
-int QVTerm::moverect(VTermRect dest, VTermRect src)
-{
-    int tlx = std::min(dest.start_col, src.start_col);
-    int tly = std::min(dest.start_row, src.start_row);
-    int brx = std::max(dest.end_col, src.end_col);
-    int bry = std::max(dest.end_row, src.end_row);
-
-    viewport()->update(pixelRect({
-            .start_row = tly,
-            .end_row = bry,
-            .start_col = tlx,
-            .end_col = brx,
-    }));
-
-    do {
-        if (!m_highlight->active())
-            break;
-
-        Region damRegion{{tlx, tly}, {brx, bry}};
-
-        if (!damRegion.contains(m_highlight->region().start())
-                && !damRegion.contains(m_highlight->region().end())) {
-            break;
-        }
-
-        if (damRegion.contains(m_highlight->region())
-                && (m_highlight->region().start().y() == m_highlight->region().end().y()
-                        || (src.start_col == 0 && src.end_col == m_vtermSize.width()))) {
-            QPoint delta{
-                    dest.start_col - src.start_col,
-                    dest.start_row - src.start_row};
-            m_highlight->region().shift(delta);
-            if (m_highlight->region().start().y() < 0)
-                m_highlight->reset();
-        } else {
-            m_highlight->reset();
-        }
-    } while (false);
 
     return 1;
 }
