@@ -616,7 +616,6 @@ void QVTerm::paintEvent(QPaintEvent *event)
             && event->rect().contains(pixelCol(m_cursor.col), pixelRow(m_cursor.row))) {
         const VTermScreenCell *cell = fetchCell(m_cursor.col, m_cursor.row);
         auto rect = pixelRect(m_cursor.col, m_cursor.row, cell->width, 1);
-        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
         p.fillRect(rect, QColor(qRgb(0x40, 0x40, 0x40)));
         if (cell->chars[0]) {
             p.setPen(toQColor(defaultBg));
