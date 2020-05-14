@@ -747,11 +747,8 @@ int QVTerm::movecursor(VTermPos pos, VTermPos oldpos, int visible)
                 (std::abs(pos.col - oldpos.col) + 1),
                 1));
     } else {
-        viewport()->update(
-                0,
-                pixelRow(std::min(pos.row, oldpos.row)),
-                size().width(),
-                pixelRow(2));
+        viewport()->update(pixelRect(pos.col, pos.row, m_cellSize.width(), 1));
+        viewport()->update(pixelRect(oldpos.col, oldpos.row, m_cellSize.width(), 1));
     }
     m_cursor.row = pos.row;
     m_cursor.col = pos.col;
