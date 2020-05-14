@@ -26,6 +26,18 @@
 #include <unistd.h>
 
 namespace {
+QDebug operator<<(QDebug dbg, VTermRect rect) __attribute__((unused));
+QDebug operator<<(QDebug dbg, VTermRect rect)
+{
+    dbg.nospace()
+            << "VTermRect("
+            << rect.start_col << "x" << rect.start_row
+            << " - "
+            << rect.end_col << "x" << rect.end_row
+            << ")";
+    return dbg.space();
+}
+
 VTermModifier vtermModifier(int mod)
 {
     int ret = VTERM_MOD_NONE;
