@@ -66,7 +66,7 @@ public:
                 (m_start.y() < other.m_start.y()
                         || (m_start.y() == other.m_start.y() && m_start.x() <= other.m_start.x()))
                 && (m_end.y() > other.m_end.y()
-                           || (m_end.y() == other.m_end.y() && m_end.x() >= other.m_end.x())));
+                        || (m_end.y() == other.m_end.y() && m_end.x() >= other.m_end.x())));
     }
 
     /**

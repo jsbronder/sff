@@ -68,7 +68,7 @@ bool Region::overlaps(const Region &other) const
             (m_start.y() < other.m_end.y() - 1
                     || (m_start.y() == other.m_end.y() - 1 && m_start.x() < other.m_end.x() - 1))
             && (m_end.y() > other.m_start.y()
-                       || (m_end.y() == other.m_start.y() && m_end.x() > other.m_start.x())));
+                    || (m_end.y() == other.m_start.y() && m_end.x() > other.m_start.x())));
 }
 
 QRect Region::pixelRect(const QSize &termSize, const QSize &cellSize) const
