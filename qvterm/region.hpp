@@ -30,6 +30,16 @@ public:
     /**
      * Create a new region
      *
+     * @param rect  - VTermRect defining region
+     **/
+    Region(VTermRect rect) :
+        Region(
+                QPoint(rect.start_col, rect.start_row),
+                QPoint(rect.end_col, rect.end_row)){};
+
+    /**
+     * Create a new region
+     *
      * @param start     - Start position in pixel space
      * @param end       - End position in pixel space
      * @param cellSize  - Size of a VTerm cell

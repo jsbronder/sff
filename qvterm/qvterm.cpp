@@ -687,9 +687,7 @@ int QVTerm::damage(VTermRect rect)
 {
     viewport()->update(pixelRect(rect));
 
-    Region damRegion{
-            QPoint(rect.start_col, rect.start_row),
-            QPoint(rect.end_col, rect.end_row)};
+    Region damRegion{rect};
     if (m_highlight->region().overlaps(damRegion))
         m_highlight->reset();
     matchClear();
