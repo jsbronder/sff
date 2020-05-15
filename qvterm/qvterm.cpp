@@ -432,7 +432,6 @@ void QVTerm::keyPressEvent(QKeyEvent *event)
             mod = VTERM_MOD_NONE;
 
         vterm_keyboard_key(m_vterm, key, mod);
-        m_scrollback->unscroll();
     } else if (event->text().length()) {
         // This maps to delete word and is way to easy to mistakenly type
         if (event->key() == Qt::Key_Space && mod == VTERM_MOD_SHIFT)
@@ -447,7 +446,11 @@ void QVTerm::keyPressEvent(QKeyEvent *event)
                 m_vterm,
                 event->text().toUcs4()[0],
                 static_cast<VTermModifier>(mod & ~VTERM_MOD_CTRL));
+    }
+
+    if (mod == VTERM_MOD_NONE && !m_altscreen && m_scrollback->offset()) {
         m_scrollback->unscroll();
+        viewport()->update();
     }
 
     flushToPty();
@@ -859,6 +862,11 @@ void QVTerm::pasteFromClipboard()
     for (auto c : cb->text(QClipboard::Selection).toUcs4())
         vterm_keyboard_unichar(m_vterm, c, VTERM_MOD_NONE);
     vterm_keyboard_end_paste(m_vterm);
+
+    if (!m_altscreen && m_scrollback->offset()) {
+        m_scrollback->unscroll();
+        viewport()->update();
+    }
 
     flushToPty();
     return;
