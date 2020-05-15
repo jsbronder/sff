@@ -25,6 +25,8 @@
 #include <termios.h>
 #include <unistd.h>
 
+// #define DEBUG_PAINT_RECT
+
 namespace {
 QDebug operator<<(QDebug dbg, VTermRect rect) __attribute__((unused));
 QDebug operator<<(QDebug dbg, VTermRect rect)
@@ -502,11 +504,6 @@ void QVTerm::paintEvent(QPaintEvent *event)
     QPainter p(viewport());
     p.setCompositionMode(QPainter::CompositionMode_Source);
 
-    //qDebug() << "sc:" << startCol
-    //    << "ec:" << endCol
-    //    << "sr:" << startRow
-    //    << "er:" << endRow;
-
     static auto ceil = [](int v, int div) {
         return (v / div) + (v % div != 0);
     };
@@ -561,6 +558,16 @@ void QVTerm::paintEvent(QPaintEvent *event)
     int endCol = startCol + ceil(event->rect().width(), m_cellSize.width());
     int startRow = event->rect().y() / m_cellSize.height();
     int endRow = startRow + ceil(event->rect().height(), m_cellSize.height());
+
+#ifdef DEBUG_PAINT_RECT
+    qDebug()
+            << event->rect()
+            << "sc:" << startCol
+            << "ec:" << endCol
+            << "sr:" << startRow
+            << "er:" << endRow
+            << "\n";
+#endif
 
     for (int row = startRow; row < endRow; row++) {
         int phyrow = row - static_cast<int>(m_scrollback->offset());
