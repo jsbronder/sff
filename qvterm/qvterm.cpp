@@ -504,10 +504,6 @@ void QVTerm::paintEvent(QPaintEvent *event)
     QPainter p(viewport());
     p.setCompositionMode(QPainter::CompositionMode_Source);
 
-    static auto ceil = [](int v, int div) {
-        return (v / div) + (v % div != 0);
-    };
-
     static auto colorEqual = [](const QColor &qc, const VTermColor &vc) {
         return (qc.red() == vc.rgb.red
                 && qc.green() == vc.rgb.green
@@ -555,9 +551,9 @@ void QVTerm::paintEvent(QPaintEvent *event)
     };
 
     int startCol = event->rect().x() / m_cellSize.width();
-    int endCol = startCol + ceil(event->rect().width(), m_cellSize.width());
+    int endCol = startCol + event->rect().width() / m_cellSize.width();
     int startRow = event->rect().y() / m_cellSize.height();
-    int endRow = startRow + ceil(event->rect().height(), m_cellSize.height());
+    int endRow = startRow + event->rect().height() / m_cellSize.height();
 
 #ifdef DEBUG_PAINT_RECT
     qDebug()
