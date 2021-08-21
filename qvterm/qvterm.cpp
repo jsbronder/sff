@@ -472,7 +472,7 @@ void QVTerm::mouseMoveEvent(QMouseEvent *event)
 
 void QVTerm::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::MidButton) {
+    if (event->button() == Qt::MiddleButton) {
         event->accept();
         pasteFromClipboard();
         return;
